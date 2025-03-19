@@ -27,9 +27,10 @@ public class Main {
         }
 
         // Testing the save function
-        City homs = new City("Homs", "SYR", "Asia", 100000);
+        City homs = new City("Homs", "SYR", "Asia", 1000000);
         try {
-            cityDao.save(homs);
+            homs = cityDao.save(homs);
+            System.out.println(homs.getID());
         } catch (InstanceAlreadyExistsException e) {
             System.out.println(e.getMessage());
         }
@@ -43,5 +44,14 @@ public class Main {
             System.out.println(c.toString());
         }*/
 
+        // Testing the update function
+        homs.setPopulation(2000000);
+        cityDao.update(homs);
+        System.out.println(cityDao.findByName("Homs"));
+
+
+        // Testing the delete function
+        cityDao.deleteById(homs.getID());
+        System.out.println(cityDao.findByName("Homs"));
     }
 }
