@@ -78,7 +78,9 @@ public class CityDaoImpl implements CityDao{
                     City city = new City(rsId, rsName, rsCountryCode,rsDistrict, rsPopulation);
                     found.add(city);
                 }
-                return found;
+                // Returns the list if anything is found
+                if(!found.isEmpty())
+                    return found;
             }
         } catch (SQLException e) {
             System.out.println("Error connecting to the database :" + e.getMessage());
@@ -114,7 +116,9 @@ public class CityDaoImpl implements CityDao{
                     City city = new City(rsId, rsName, rsCountryCode,rsDistrict, rsPopulation);
                     found.add(city);
                 }
-                return found;
+                // Returns the list if anything is found
+                if(!found.isEmpty())
+                    return found;
             }
         } catch (SQLException e) {
             System.out.println("Error connecting to the database :" + e.getMessage());
@@ -147,7 +151,9 @@ public class CityDaoImpl implements CityDao{
                     City city = new City(rsId, rsName, rsCountryCode,rsDistrict, rsPopulation);
                     found.add(city);
                 }
-                return found;
+                // Returns the list if anything is found
+                if(!found.isEmpty())
+                    return found;
             }
         } catch (SQLException e) {
             System.out.println("Error connecting to the database :" + e.getMessage());
@@ -178,10 +184,9 @@ public class CityDaoImpl implements CityDao{
 
 
             // Checks if the city already exists to avoid adding a duplicate
-            if(findByName(city.getName())  ==  null && findByCode(city.getCountryCode())  ==  null){
+            if(!cityExists(city.getName(), city.getCountryCode())){
                 int rows = statement.executeUpdate();
                 if (rows > 0) {
-                    System.out.println("Done");
                     try (ResultSet keys = statement.getGeneratedKeys()) {
                         if (keys.next()) {
                             int id = keys.getInt(1);
@@ -195,7 +200,6 @@ public class CityDaoImpl implements CityDao{
             else {
                 throw new InstanceAlreadyExistsException("City being added already exists! CityData -> " + city.toString());
             }
-
         } catch (SQLException e) {
             System.out.println("Error connecting to the database :" + e.getMessage());
         }
@@ -207,10 +211,75 @@ public class CityDaoImpl implements CityDao{
     @Override
     public void update(City city) {
 
+        if (city == null) {
+            throw new NullPointerException("You are trying to update a NULL city!");
+        }
+
+        final String updateCityQuery = "UPDATE City SET Name = ?, CountryCode = ?, District = ?, Population = ? WHERE ID = ?";
+
+        try (
+                Connection connection = dbConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(updateCityQuery);
+        ) {
+            statement.setString(1, city.getName());
+            statement.setString(2, city.getCountryCode());
+            statement.setString(3, city.getDistrict());
+            statement.setInt(4, city.getPopulation());
+            statement.setInt(5, city.getID());
+
+            int rows = statement.executeUpdate();
+            if (rows == 0) {
+                throw new SQLException("Update failed: No city found with ID " + city.getID());
+            }
+
+            System.out.println("City updated successfully!");
+
+        } catch (SQLException e) {
+            System.out.println("Error updating the database: " + e.getMessage());
+        }
+
     }
 
     @Override
     public void deleteById(int id) {
+        final String deleteCityQuery = "DELETE FROM City WHERE ID = ?";
 
+        try (
+                Connection connection = dbConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(deleteCityQuery);
+        ) {
+            statement.setInt(1, id);
+
+            int rows = statement.executeUpdate();
+            if (rows == 0) {
+                throw new SQLException("Delete failed: No city found with ID " + id);
+            }
+
+            System.out.println("City deleted successfully!");
+
+        } catch (SQLException e) {
+            System.out.println("Error deleting from the database: " + e.getMessage());
+        }
+    }
+
+
+    // Returns true if the city name is found within the given country
+    private boolean cityExists(String name, String countryCode) throws SQLException {
+        final String checkQuery = "SELECT COUNT(*) FROM City WHERE Name = ? AND CountryCode = ?";
+
+        try (
+                Connection connection = dbConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(checkQuery);
+        ) {
+            statement.setString(1, name);
+            statement.setString(2, countryCode);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0; // Returns true if city exists
+                }
+            }
+        }
+        return false;
     }
 }
