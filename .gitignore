@@ -1,2 +1,5 @@
 # Project exclude paths
 /target/
+
+# Ignore all .idea files and folders
+.idea/
